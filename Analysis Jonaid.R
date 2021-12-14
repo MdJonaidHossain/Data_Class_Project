@@ -393,3 +393,5 @@ ggplot(PG, aes(x=Treat, y=DMmix )) +
 if(!require(devtools)) install.packages("factoextra")
 
 library(factoextra)
+
+res.pca <- prcomp(PG[-c(1:2)], scale = TRUE)
