@@ -195,7 +195,7 @@ AmmoniaN = Ammonia N in % DM\
 ###Renaming the Treatments for Better Understanding
 l <- c("T10","T1","T2","T3","T4","T5","T6","T7","T8","T9")
 la <- c("Control","NPK100","CM100","Bio","CM50Bio","NPK50CM","NPK50Bio","NPK50CMBio","CM50","NPK50")
-PG$Treat <-  factor(PG$Treat, levels = l, labels = la)
+ss
 
 ### Reordering the Treatments for Better Understanding of the Result as well as Grouping
 PG$Treat <- factor(PG$Treat, levels = c("Control",
