@@ -195,7 +195,7 @@ AmmoniaN = Ammonia N in % DM\
 ###Renaming the Treatments for Better Understanding
 l <- c("T10","T1","T2","T3","T4","T5","T6","T7","T8","T9")
 la <- c("Control","NPK100","CM100","Bio","CM50Bio","NPK50CM","NPK50Bio","NPK50CMBio","CM50","NPK50")
-ss
+
 
 ### Reordering the Treatments for Better Understanding of the Result as well as Grouping
 PG$Treat <- factor(PG$Treat, levels = c("Control",
@@ -217,10 +217,10 @@ We Did PCA as to see the Distribution of the Variable and to see the Correlation
 #Principal Component Analysis
 
 df <- PG[3:28]
-pca_res <- prcomp(df, scale. = TRUE)
+pca_res <- prcomp(df, scale. = TRUE)                
 
 ### Percentage of Explained Variance
-fviz_eig(pca_res)
+fviz_eig(pca_res, addlabels = TRUE)                #Extract and visualize of the variances
 ```
 
 Here only no. 1 Shows high Variation so We'll only Work on the PC1
