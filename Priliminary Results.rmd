@@ -1,0 +1,445 @@
+---
+title: "Preliminary Result"
+author: "Md. Jonaid Hossain"
+date: "12/21/2021"
+output:
+  html_document:
+    code_folding: hide           # Fold the code
+    highlight: tango             # Code format
+    toc: yes                     # Table of contents
+    toc_depth: 6                     
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, dev='png', width = 16, height = 10, units = "in", dpi = 200)
+if (!dir.exists("results")) dir.create("results")  # create folder if necessary
+knitr::opts_chunk$set(
+  results = 'markup',               # nice results format
+  fig.path = "results/",            # Folder for figures
+  dev = "png",                      # png format for figures
+  dev.args = list(type = "cairo"),  # png args. Improves png
+  dpi = 100 )                        # 100 for working, 300 for publication
+```
+
+## Installing the Required Packages
+
+```{r}
+#### LIBRARIES #################################################################
+### Date: 21122021   Author: Md Jonaid Hossain
+################################################################################
+
+
+### List libraries to activate
+LIB <- c("knitr"            # To knit the document in any format
+        , "tools"          # For security copies
+        , "plotrix"         # for standard error: std.error()
+        , "readxl"          # Idem
+        , "writexl"         # same than xlsx but without Java problems
+        , "ggplot2"         # Advanced graphics
+        , "plyr"            # Grouping variables for ggplot
+        , "tidyr"           # Arrange data
+        , "devtools"        # To install github packages
+        , "agricolae"       # For skewness and kurtosis
+        , "ggpubr"          # Advanced graphics
+        , "vcd"             # Mosaic plots
+        , "dplyr"           #A Grammar of Data Manipulation
+        , "FactoMineR"
+        , "factoextra"
+        , "missMDA"
+        , "ggfortify"
+        , "cluster"
+        , "forcats"
+        , "remotes"
+        )
+# citation()
+# citation("agricolae")
+# citation("plotrix")
+# citation("ggpubr")
+# citation("readxl")
+# citation("writexl")
+# citation("plyr")
+# citation("tidyr")
+# citation("devtools")
+# citation("ggpubr")
+# citation("car")
+# citation("knitr")
+# citation("vcd")
+# citation("dplyr")
+# citatin("FactoMineR")
+# citation("factoextra")
+# citation("missMDA")
+# citation("ggfortify")
+# citation("cluster")
+# citation("forcats")
+# citation("remotes")
+
+
+### Install libraries only if necessary (first time)
+### And activate them
+for (i in LIB) {
+    if (!require(i, character.only = T)) install.packages(i, dep = T, repos="http://cran.rstudio.com/")
+    library(i, character.only = T)
+}
+```
+
+## Create a Folder Name Data
+
+Within this Folder all the Source Exel Sheet Data will be Present After Downloading
+
+```{r}
+##Create a folder for the Raw Data
+if(!dir.exists("data")) dir.create("data")
+```
+
+# Article & Data
+
+["Impact of organic and inorganic fertilizers on the yield and quality of silage corn intercropped with soybean"](https://peerj.com/articles/5280/#supplemental-information)
+
+## Objective
+
+To Find a Sustainable Crop Production of Corn (*Zea mays*) Silage that will not be heavily dependent on the use of Chemical Fertilizers
+
+## Hypothesis
+
+Whether the use of Bio-fertilizers (BF) have significant impact on improving either the yield or quality of forage fertilized with inorganic or organic fertilizer.\
+
+No Impact of Using Bio-Fertilizers = Null Hypothesis (H0)
+
+## Treatments
+
+### Description
+
+T1 100% NPK or conventional fertilizer\
+T2 100% Chicken manure (CM)\
+T3 Bio-fertilizer\
+T4 50% Chicken manure + Bio-fertilizer\
+T5 50% NPK + 50% chicken manure\
+T6 50% NPK+ Bio-fertilizer\
+T7 50% NPK + 50% chicken manure + Bio-fertilizer\
+T8 50% Chicken manure\
+T9 50% NPK\
+T10 No fertilizer = Control
+
+NPK= Nitrogen, Phosphorus, Potassium; CM= Chicken Manure; BF= Bio-fertilizer
+
+4 Replication inn RCBD in Total
+
+## Downloading and Organizing the Data into a Single DataFrame
+
+```{r}
+### Download the File from the Journal's Supplemental Information
+
+# #Determination of ethylene production by gas chromatography
+# download.file("https://dfzljdn9uc3pi.cloudfront.net/2018/5280/1/Plant_Growth.xlsx", "data/Plant_Growth.xlsx")
+# #Forage nutritive quality
+# download.file("https://dfzljdn9uc3pi.cloudfront.net/2018/5280/1/Forage_quality.xlsx", "data/Forage_nutritive_quality.xlsx")
+# #Silage volatile fatty acids (VFA)
+# download.file("https://dfzljdn9uc3pi.cloudfront.net/2018/5280/1/VFA.xlsx", "data/Silage_volatile_fatty_acids.xlsx")
+
+### Better with readxl::read_xlsx (no Java needed) + Omitting the NonRequired data for the Analysis
+PlantGrowth <- read_excel("data/Plant_Growth.xlsx", range = "A2:N42" , col_names = TRUE)
+FNQ <- read_excel("data/Forage_nutritive_quality.xlsx", range = "A2:I42", col_names = TRUE)
+VFA <- read_excel("data/Silage_volatile_fatty_acids.xlsx", range = "A2:J42", col_names = TRUE)
+
+### Organizing & Merging the Data into PG data frame
+PG <- merge(PlantGrowth,FNQ, by=c("Rep", "Treat"))
+PG <- merge(PG,VFA[-which(names(VFA) == "Total")], by=c("Rep", "Treat"))
+```
+
+###Reanaming the Treatment for Better Understanding
+
+T10 No fertilizer = Control\
+T1 100% NPK or conventional fertilizer = NPK100\
+T2 100% Chicken manure (CM) = CM100\
+T3 Bio-fertilizer = Bio\
+T4 50% Chicken manure + Bio-fertilizer = CM50Bio\
+T5 50% NPK + 50% chicken manure = NPK50CM\
+T6 50% NPK+ Bio-fertilizer = NPK50Bio\
+T7 50% NPK + 50% chicken manure + Bio-fertilizer = NPK50CMBio\
+T8 50% Chicken manure = CM50\
+T9 50% NPK = NPK50\
+
+NPK= Nitrogen, Phosphorus, Potassium; CM= Chicken Manure; BF= Bio-fertilizer
+
+### Extended Form of the Variables
+
+CGRc = Crop Growth Rate for Corn in g/m^2^/day\
+CGRSc = Crop Growth Rate for Soybean in g/m^2^/day\
+LAIc = Leaf Area Index for Corn\
+LAIs = Leaf Area Index for Soybean\
+PHc = Plant Height for Corn in cm\
+PHs = Plant Height for Soybean in cm\
+FYc = Forage Yield for Corn in t/ha\
+FYs = Forage Yield for Soybean in t/ha\
+FYmix = Forage Yield for both Corn & Soybean in t/ha\
+DMc = Dry Matter content in Corn in t/ha\
+DMs = Dry Matter content in Soybean t/ha\
+DMmix = Dry Matter content for both Corn & Soybean t/ha\
+CPmix = Crude Protein content for both Corn & Soybean %\
+NDFmix = Neutral Detergent Fiber %\
+ADFmix = Acid Detergent Fiber %\
+DMDmix = Dry Matter Digestibility %\
+WSCmix = Water Soluble Carbohydrates %\
+ADLmix = Acid Detergent Lignin %\
+ProteinYmix = Protein Yield in kg/ha\
+PH = pH\
+DM = Dry Matter Range %\
+Lactic = Lactic Acid in % DM\
+Acetic = Acetic Acid in % DM\
+Propionic = Propionic Acid in % DM\
+Butyric = Butyric Acid in % DM\
+AmmoniaN = Ammonia N in % DM\
+
+```{r}
+###Renaming the Treatments for Better Understanding
+l <- c("T10","T1","T2","T3","T4","T5","T6","T7","T8","T9")
+la <- c("Control","NPK100","CM100","Bio","CM50Bio","NPK50CM","NPK50Bio","NPK50CMBio","CM50","NPK50")
+PG$Treat <-  factor(PG$Treat, levels = l, labels = la)
+
+### Reordering the Treatments for Better Understanding of the Result as well as Grouping
+PG$Treat <- factor(PG$Treat, levels = c("Control",
+                                        "Bio","CM50","CM50Bio",
+                                        "NPK50Bio","NPK50","CM100",
+                                        "NPK100","NPK50CM","NPK50CMBio"))
+
+
+## To View the Data 
+kable(PG)
+
+```
+
+##Principal Component Analysis
+
+We Did PCA as to see the Distribution of the Variable and to see the Correlation and Groups in the Treatments.
+
+```{r}
+#Principal Component Analysis
+
+df <- PG[3:28]
+pca_res <- prcomp(df, scale. = TRUE)
+
+### Percentage of Explained Variance
+fviz_eig(pca_res)
+```
+
+Here only no. 1 Shows high Variation so We'll only Work on the PC1
+
+```{r}
+### Showing all the PCA 
+pca_res
+
+###PCA1 showa all the Variance
+pca_res$rotation[,1]
+
+
+### PCA Biplot
+fviz_pca_biplot(pca_res, repel = TRUE,
+                col.var = "#2E9FDF", # Variables color
+                col.ind = "#696969"  # Individuals color
+)
+```
+
+It Shows the Distribution of the Variables within 2 Dimention
+
+```{r}
+### Variables Distribution & Direction PCA
+fviz_pca_var(pca_res,
+             col.var = "contrib", # Color by contributions to the PC
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE     # Avoid text overlapping
+)
+
+### Adding the Quality Numerical to the PG Dataframe
+PG$Quality_pca <- pca_res$x[,1]
+
+## To View the Data 
+View(PG)
+
+
+```
+
+### Tukay HSD & Box Plot of the Variables to See the Different Group
+
+```{r}
+# Tukay HSD & Box Plot of the Variables
+
+###CGRc
+Variable <- "CGRc"
+source("R/00_Loop.R")
+```
+
+```{r}
+###CGRSs
+Variable <- "CGRSs"
+source("R/00_Loop.R")
+```
+
+```{r}
+###LAIc
+Variable <- "LAIc"
+source("R/00_Loop.R")
+```
+
+```{r}
+###LAIs
+Variable <- "LAIs"
+source("R/00_Loop.R")
+```
+
+```{r}
+###PHc
+Variable <- "PHc"
+source("R/00_Loop.R")
+```
+
+```{r}
+###PHs
+Variable <- "PHs"
+source("R/00_Loop.R")
+```
+
+```{r}
+###FYc
+Variable <- "FYc"
+source("R/00_Loop.R")
+```
+
+```{r}
+###FYs
+Variable <- "FYs"
+source("R/00_Loop.R")
+```
+
+```{r}
+###FYmix
+Variable <- "FYmix"
+source("R/00_Loop.R")
+```
+
+```{r}
+###DMc
+Variable <- "DMc"
+source("R/00_Loop.R")
+```
+
+```{r}
+###DMs
+Variable <- "DMs"
+source("R/00_Loop.R")
+```
+
+```{r}
+###DMmix
+Variable <- "DMmix"
+source("R/00_Loop.R")
+```
+
+```{r}
+###CPmix
+Variable <- "CPmix"
+source("R/00_Loop.R")
+```
+
+```{r}
+###NDFmix
+Variable <- "NDFmix"
+source("R/00_Loop.R")
+```
+
+```{r}
+###ADFmix
+Variable <- "ADFmix"
+source("R/00_Loop.R")
+```
+
+```{r}
+###DMDmix
+Variable <- "DMDmix"
+source("R/00_Loop.R")
+```
+
+```{r}
+###WSCmix
+Variable <- "WSCmix"
+source("R/00_Loop.R")
+```
+
+```{r}
+###ADLmix
+Variable <- "ADLmix"
+source("R/00_Loop.R")
+```
+
+```{r}
+###ProteinYmix
+Variable <- "ProteinYmix"
+source("R/00_Loop.R")
+```
+
+```{r}
+###PH
+Variable <- "PH"
+source("R/00_Loop.R")
+```
+
+```{r}
+###DM
+Variable <- "DM"
+source("R/00_Loop.R")
+```
+
+```{r}
+###Lactic
+Variable <- "Lactic"
+source("R/00_Loop.R")
+```
+
+```{r}
+###Acetic
+Variable <- "Acetic"
+source("R/00_Loop.R")
+```
+
+```{r}
+###Propionic
+Variable <- "Propionic"
+source("R/00_Loop.R")
+```
+
+```{r}
+###Butyric
+Variable <- "Butyric"
+source("R/00_Loop.R")
+```
+
+```{r}
+###AmmoniaN
+Variable <- "AmmoniaN"
+source("R/00_Loop.R")
+```
+
+### Let's See the Quality of all the Treatment
+
+```{r}
+
+## To View the Data 
+kable(PG)
+
+
+### Performing the Boxplot on Quality
+ggplot(data = PG, aes(x = Treat, y = Quality_pca, fill = Treat
+)) +
+  geom_boxplot()+
+  geom_path()+
+  geom_violin()+
+  geom_jitter(size = 2, color = "black" ) +
+  geom_smooth(method = "lm", formula = y ~ x) +
+  labs(title = "Boxplot of the Quality Data") +
+  theme_bw()
+```
+
+#Results
+
+From All the Plot Especially the Boxplot of the Quality Data shows the Highest Quality was in the Treatment T7 50% NPK + 50% chicken manure + Bio-fertilizer, Followed by T5 50% NPK + 50% chicken manure. The Least is in the treatment of T10 No fertilizer = Control. The T3 Bio-fertilizer, T8 50% Chicken manure, & T4 50% Chicken manure + Bio-fertilizer Shows Similar Results. The Treatment T6 50% NPK+ Bio-fertilizer & T9 50% NPK is in the Same Group. The T2 100% Chicken manure (CM) Shows Below Average Results. The conventional One with 100% NPK is in the Bottom Third Position.
+
